@@ -17,28 +17,24 @@ namespace usbkill
             InitializeComponent();
             ShowInfo();
         }
-        int shutdowntype = 0;
         protected override void WndProc(ref Message m)
         {
             const int WM_DEVICECHANGE = 0x219;
             const int DBT_DEVICEARRIVAL = 0x8000;
             const int DBT_DEVICEREMOVECOMPLETE = 0x8004;
-
-            object ojb = new object();
             try
             {
-                // WM_DEVICECHANGE Message : 電腦硬體裝置改變時產生的訊息
                 if (m.Msg == WM_DEVICECHANGE)
                 {
                     switch (m.WParam.ToInt32())
                     {
                         case WM_DEVICECHANGE:
                             break;
-                        // DBT_DEVICEARRIVAL Event : 裝置插入並且可以使用時，產生的系統訊息
                         case DBT_DEVICEARRIVAL:
-                        // DBT_DEVICEREMOVECOMPLETE Event : 裝置卸載或移除時產生的系統訊息
+                            DeviceChange(0);
+                            break;
                         case DBT_DEVICEREMOVECOMPLETE:
-                            DeviceChange();
+                            DeviceChange(1);
                             break;
                     }
                 }
@@ -50,45 +46,68 @@ namespace usbkill
             base.WndProc(ref m);
         }
 
-        private void DeviceChange()
+        int shutdowntype_insert = 0;
+        int shutdowntype_remove = 0;
+        private void DeviceChange(int n)
         {
-            ShutDown();
+            ShutDown(n);
             ShowInfo();
         }
         private void ShowInfo()
         {
-            String[] shutdownname = { "無", "鎖定", "休眠", "登出", "關機" };
-            if (radioButton0.Checked)
+            String[] shutdownname = { "None", "Lock", "Hibernate", "Sign out", "Shut down" };
+            if (radioButton00.Checked)
             {
-                shutdowntype = 0;
+                shutdowntype_insert = 0;
             }
-            else if (radioButton1.Checked)
+            else if (radioButton01.Checked)
             {
-                shutdowntype = 1;
+                shutdowntype_insert = 1;
             }
-            else if (radioButton2.Checked)
+            else if (radioButton02.Checked)
             {
-                shutdowntype = 2;
+                shutdowntype_insert = 2;
             }
-            else if (radioButton3.Checked)
+            else if (radioButton03.Checked)
             {
-                shutdowntype = 3;
+                shutdowntype_insert = 3;
             }
-            else if (radioButton4.Checked)
+            else if (radioButton04.Checked)
             {
-                shutdowntype = 4;
+                shutdowntype_insert = 4;
+            }
+            if (radioButton10.Checked)
+            {
+                shutdowntype_remove = 0;
+            }
+            else if (radioButton11.Checked)
+            {
+                shutdowntype_remove = 1;
+            }
+            else if (radioButton12.Checked)
+            {
+                shutdowntype_remove = 2;
+            }
+            else if (radioButton13.Checked)
+            {
+                shutdowntype_remove = 3;
+            }
+            else if (radioButton14.Checked)
+            {
+                shutdowntype_remove = 4;
             }
             listBox1.Items.Clear();
-            listBox1.Items.Add("USB Kill 模式已改為：" + shutdownname[shutdowntype]);
+            listBox1.Items.Add("USB Kill Insert mode : " + shutdownname[shutdowntype_insert%10]);
+            listBox1.Items.Add("USB Kill Remove mode : " + shutdownname[shutdowntype_remove%10]);
             foreach (DriveInfo di in DriveInfo.GetDrives())
             {
                 if (di.DriveType == DriveType.Removable)
                 {
-                    listBox1.Items.Add("偵測到" + di.Name + "抽取式存放裝置");
+                    listBox1.Items.Add("Connect: " + di.Name);
                 }
             }
         }
-        private void ShutDown()
+        private void ShutDown(int n)
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.FileName = "cmd.exe";
@@ -97,6 +116,15 @@ namespace usbkill
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.CreateNoWindow = true;
             p.Start();
+            int shutdowntype = 0;
+            if (n == 0)
+            {
+                shutdowntype = shutdowntype_insert;
+            }
+            else if (n == 1)
+            {
+                shutdowntype = shutdowntype_remove;
+            }
             switch (shutdowntype)
             {
                 case 1:
